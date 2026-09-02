@@ -1,0 +1,4 @@
+# reproducible from build_dataset.py; too large to commit
+data/
+.venv/
+__pycache__/
