@@ -70,32 +70,42 @@ COHORT_MISS = ["remper"]
 # ownership (supplied externally at LANDIS-deployment; from FIA here)
 COHORT_ONEHOT = {"OWNGRPCD":[10,20,30,40]}
 
+def compute_medians(df, num):
+    """Per-numeric-column median for imputation (columns already lower-cased)."""
+    med = {}
+    for c in num:
+        v = df[c.lower()].to_numpy(np.float64)
+        m = np.isnan(v)
+        med[c] = float(np.nanmedian(v)) if not np.all(m) else 0.0
+    return med
+
+def build_features(df, num, miss, onehot, medians):
+    """Deterministic feature matrix from a (lower-cased) DataFrame. Shared by
+    training and inference so the encoding is identical. `medians` supplies the
+    training-time imputation values; missing one-hot levels map to all-zeros."""
+    feats, names = [], []
+    for c in num:                                  # numeric (+ isna indicator)
+        v = df[c.lower()].to_numpy(np.float64)
+        m = np.isnan(v)
+        v = np.where(m, medians[c], v)
+        feats.append(v); names.append(c)
+        if c in miss:
+            feats.append(m.astype(np.float64)); names.append(c + "_isna")
+    for c, levels in onehot.items():               # one-hot (explicit levels)
+        v = df[c.lower()].to_numpy(np.float64)
+        for lv in levels:
+            feats.append((v == lv).astype(np.float64)); names.append(f"{c}={lv}")
+    return np.column_stack(feats).astype(np.float64), names
+
 def load(name, num, miss, onehot, group_col):
-    """Load parquet, build feature matrix X, label y, group ids, and feature names."""
-    cols = list(dict.fromkeys(num + list(onehot) + ["label", group_col]))
-    # duckdb resolves column names case-insensitively; alias TREECLCD/CCLCD which
-    # live under different casings in the two files.
+    """Load parquet, build feature matrix X, label y, group ids, names, medians."""
     df = duckdb.sql(f"SELECT * FROM '{DATA}/{name}'").df()
     df.columns = [c.lower() for c in df.columns]
     y = df["label"].to_numpy(np.float32)
     groups = df[group_col.lower()].to_numpy()
-    feats, names = [], []
-    # numeric: median impute (+ missingness indicator for heavy-null cols)
-    for c in num:
-        v = df[c.lower()].to_numpy(np.float64)
-        m = np.isnan(v)
-        med = np.nanmedian(v) if not np.all(m) else 0.0
-        v = np.where(m, med, v)
-        feats.append(v); names.append(c)
-        if c in miss:
-            feats.append(m.astype(np.float64)); names.append(c + "_isna")
-    # one-hot categoricals (explicit level set; unknown/na -> all zeros)
-    for c, levels in onehot.items():
-        v = df[c.lower()].to_numpy(np.float64)
-        for lv in levels:
-            feats.append((v == lv).astype(np.float64)); names.append(f"{c}={lv}")
-    X = np.column_stack(feats).astype(np.float64)
-    return X, y, groups, names
+    medians = compute_medians(df, num)
+    X, names = build_features(df, num, miss, onehot, medians)
+    return X, y, groups, names, medians
 
 # ----------------------------------------------------------------------------
 # Two-layer MLP: X -> Linear(H) -> ReLU -> Linear(1) -> sigmoid, Adam + weighted BCE
@@ -153,10 +163,6 @@ class MLP:
                 db1 = dh.sum(0)
                 self._adam({"W1":dW1,"b1":db1,"W2":dW2,"b2":db2})
 
-def standardize(Xtr, *others):
-    mu = Xtr.mean(0); sd = Xtr.std(0); sd[sd==0] = 1.0
-    return [( (X-mu)/sd ) for X in (Xtr,)+others]
-
 def decile_calibration(y, p, bins=10):
     order = np.argsort(p); y, p = y[order], p[order]
     out = []
@@ -166,7 +172,7 @@ def decile_calibration(y, p, bins=10):
 
 def run(name, parquet, num, miss, onehot, group_col, hidden, epochs, tag):
     print(f"\n{'='*70}\n{tag}\n{'='*70}", flush=True)
-    X, y, groups, names = load(parquet, num, miss, onehot, group_col)
+    X, y, groups, names, medians = load(parquet, num, miss, onehot, group_col)
     print(f"rows={len(y):,}  features={X.shape[1]}  positives={int(y.sum()):,} ({y.mean()*100:.3f}%)")
 
     # plot-grouped 70/15/15 split
@@ -174,7 +180,9 @@ def run(name, parquet, num, miss, onehot, group_col, hidden, epochs, tag):
     g2 = groups[tmp]
     va_rel, te_rel = next(GroupShuffleSplit(1, test_size=0.50, random_state=1).split(X[tmp],y[tmp],g2))
     va, te = tmp[va_rel], tmp[te_rel]
-    Xtr,Xva,Xte = standardize(X[tr], X[va], X[te])
+    # standardize on the train split; keep mu/sd for inference
+    mu = X[tr].mean(0); sd = X[tr].std(0); sd[sd==0] = 1.0
+    Xtr,Xva,Xte = (X[tr]-mu)/sd, (X[va]-mu)/sd, (X[te]-mu)/sd
     ytr,yva,yte = y[tr],y[va],y[te]
 
     # balanced sample weights (mean ~1): w_pos = 0.5 N/Npos, w_neg = 0.5 N/Nneg
@@ -209,8 +217,14 @@ def run(name, parquet, num, miss, onehot, group_col, hidden, epochs, tag):
     for pp,oo,nn in res["calibration_deciles"]:
         print(f"   {pp:6.3f} -> {oo:6.3f}  (n={nn:,})")
 
+    # self-contained artifact: weights + standardization + full preprocessing
+    # spec (so predict.py reproduces the encoding) + isotonic calibrator.
+    spec = {"num": num, "miss": miss,
+            "onehot": {k: list(v) for k, v in onehot.items()},
+            "medians": medians, "feat_names": names}
     np.savez(os.path.join(OUT, f"{name}_model.npz"),
              W1=net.W1,b1=net.b1,W2=net.W2,b2=net.b2,
+             mu=mu, sd=sd, spec=np.array(json.dumps(spec)),
              feat_names=np.array(names), iso_x=iso.X_thresholds_, iso_y=iso.y_thresholds_)
     with open(os.path.join(OUT, f"{name}_metrics.json"),"w") as f:
         json.dump(res, f, indent=2)

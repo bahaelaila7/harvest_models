@@ -156,12 +156,33 @@ Outputs (all under `outputs/`, committed):
 The parquet datasets under `data/` are large and reproducible from the builders,
 so they are git-ignored.
 
+## Scoring a table (deployment)
+
+Each `*_model.npz` is self-contained — it stores the weights, the standardization
+mean/std, the full preprocessing spec (imputation medians, feature order, one-hot
+levels), and the isotonic calibrator. `predict.py` replays that spec (via the same
+`build_features` used in training) and emits a calibrated `p_cut` per row:
+
+```bash
+python predict.py --model outputs/cohort_model.npz \
+    --input  landis_cohort_summary.parquet \
+    --output preds.parquet --id-cols cell_id,timestep
+```
+
+The input table (parquet or csv) must contain the model's feature columns (the
+feature tables above); a `label` column is not required, so LANDIS output can be
+scored directly. To use model 3 on a LANDIS run, aggregate each cell's community
+cohorts into the cohort features (total/log biomass, biomass-weighted age
+structure, age-class fractions, species dominance, softwood fraction) plus the
+externally-supplied ownership, then point `--input` at that table.
+
 ## Files
 
 | File | Purpose |
 |------|---------|
 | `build_dataset.py` | FIA → stand + tree labeled parquet datasets (SQL feature/label extraction) |
 | `build_model3.py` | FIA + curated cohorts → LANDIS-deployable cohort dataset |
-| `harvest_nn.py` | numpy MLP, weighted BCE, isotonic calibration, grouped split, metrics |
+| `harvest_nn.py` | numpy MLP, weighted BCE, isotonic calibration, grouped split, metrics; saves self-contained `*_model.npz` |
+| `predict.py` | score a cohort/stand/tree table with a saved model → calibrated `p_cut` |
 | `run.sh` | one-command reproduce (venv → build → train) |
 | `requirements.txt` | pinned deps |

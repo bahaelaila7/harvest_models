@@ -1,23 +1,23 @@
 {
   "stand": {
-    "roc_auc": 0.8012577833903989,
-    "avg_precision": 0.4182580424000043,
+    "roc_auc": 0.80100376605011,
+    "avg_precision": 0.41779593919210256,
     "base_rate": 0.1413215845823288,
-    "brier_calibrated": 0.0994700624114252,
-    "brier_baseline": 0.12014620751142502
+    "brier_calibrated": 0.09948145832623362,
+    "brier_baseline": 0.12014621496200562
   },
   "tree": {
-    "roc_auc": 0.9735302965441881,
-    "avg_precision": 0.30971840577081183,
+    "roc_auc": 0.9735884013073581,
+    "avg_precision": 0.3085318954215138,
     "base_rate": 0.017788415774703026,
-    "brier_calibrated": 0.013513540185003566,
+    "brier_calibrated": 0.013508081907655779,
     "brier_baseline": 0.017166733741760254
   },
   "cohort": {
-    "roc_auc": 0.7593787297205431,
-    "avg_precision": 0.3308736632849916,
+    "roc_auc": 0.7597621997467716,
+    "avg_precision": 0.33103046516138573,
     "base_rate": 0.11120245605707169,
-    "brier_calibrated": 0.0877882985281934,
-    "brier_baseline": 0.09978315979242325
+    "brier_calibrated": 0.08776361570015036,
+    "brier_baseline": 0.09978316724300385
   }
 }

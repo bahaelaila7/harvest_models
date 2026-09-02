@@ -1,11 +1,14 @@
 
 === Building per-visit stand features (keyed by PLT_CN) ===
-stand_feat rows (forested plot-visits): 774,272  [1.9s]
+stand_feat rows (forested plot-visits): 774,272  [1.8s]
 
 === Building STAND dataset ===
 STAND dataset: 428,788 rows, 60,597 positives (14.13%)  [0.5s]
 
 === Building TREE dataset ===
-TREE dataset: 11,186,775 rows, 198,995 positives (1.779%)  [14.0s]
+TREE dataset: 11,186,775 rows, 198,995 positives (1.779%)  [19.5s]
 
+Done.
+cohort_feat rows (plot-visits with cohorts): 461,291  [2.5s]
+COHORT dataset: 327,214 rows, 36,387 positives (11.12%)  [0.4s]
 Done.
