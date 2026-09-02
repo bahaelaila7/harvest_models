@@ -1,0 +1,110 @@
+{
+  "model": "STAND  p(cut stand | stand status)",
+  "n_rows": 428788,
+  "n_features": 42,
+  "base_rate": 0.1413215845823288,
+  "n_train": 300151,
+  "n_val": 64318,
+  "n_test": 64319,
+  "roc_auc": 0.8012577833903989,
+  "avg_precision": 0.4182580424000043,
+  "brier_raw": 0.18712795111546168,
+  "brier_calibrated": 0.0994700624114252,
+  "brier_baseline": 0.12014620751142502,
+  "calibration_deciles": [
+    [
+      0.0066537418243555226,
+      0.009017412550747395,
+      6432
+    ],
+    [
+      0.022702852912750166,
+      0.021610695868730545,
+      6432
+    ],
+    [
+      0.03462289709957619,
+      0.038090795278549194,
+      6432
+    ],
+    [
+      0.05786507332327527,
+      0.05410447716712952,
+      6432
+    ],
+    [
+      0.08052587685100453,
+      0.07960198819637299,
+      6432
+    ],
+    [
+      0.1075810374372404,
+      0.10385572165250778,
+      6432
+    ],
+    [
+      0.14168024970205823,
+      0.13681592047214508,
+      6432
+    ],
+    [
+      0.1926969701754913,
+      0.18827736377716064,
+      6432
+    ],
+    [
+      0.2787087912096971,
+      0.27767413854599,
+      6432
+    ],
+    [
+      0.5096195424769939,
+      0.4874825179576874,
+      6431
+    ]
+  ],
+  "features": [
+    "remper",
+    "LAT",
+    "LON",
+    "ELEV",
+    "prev_measyear",
+    "STDAGE",
+    "STDAGE_isna",
+    "BALIVE",
+    "BALIVE_isna",
+    "SLOPE",
+    "SLOPE_isna",
+    "ALSTKCD",
+    "ALSTKCD_isna",
+    "GSSTKCD",
+    "GSSTKCD_isna",
+    "forest_prop",
+    "agb_per_acre",
+    "agb_per_acre_isna",
+    "tpa",
+    "qmd",
+    "qmd_isna",
+    "max_dia",
+    "n_species",
+    "softwood_frac",
+    "SITECLCD",
+    "SITECLCD_isna",
+    "STDSZCD",
+    "OWNGRPCD=10",
+    "OWNGRPCD=20",
+    "OWNGRPCD=30",
+    "OWNGRPCD=40",
+    "STDORGCD=0",
+    "STDORGCD=1",
+    "fortyp_grp=1",
+    "fortyp_grp=2",
+    "fortyp_grp=3",
+    "fortyp_grp=4",
+    "fortyp_grp=5",
+    "fortyp_grp=6",
+    "fortyp_grp=7",
+    "fortyp_grp=8",
+    "fortyp_grp=9"
+  ]
+}

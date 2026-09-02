@@ -89,9 +89,19 @@ base rate, plus Brier score and a decile calibration table (probability quality)
 ## Results
 
 See `outputs/summary.json`, `outputs/{stand,tree}_metrics.json`, and
-`outputs/train.log`. Headline (test set, results table filled by the training run):
+`outputs/train.log`. Headline on the plot-grouped test set:
 
-<!-- RESULTS -->
+| Model | Rows | Cut rate | Features | ROC-AUC | Avg precision (vs base) | Brier (calib. vs base) |
+|-------|-----:|---------:|---------:|--------:|------------------------:|-----------------------:|
+| **Stand** `p(cut stand \| status)` | 428,788 | 14.1% | 42 | **0.801** | **0.418** (base 0.140, 3.0×) | 0.099 vs 0.120 |
+| **Tree** `p(cut tree \| status)` | 11,186,775 | 1.78% | 59 | **0.974** | **0.310** (base 0.018, 17.7×) | 0.0135 vs 0.0172 |
+
+Both beat their base-rate baselines on every metric and are well-calibrated after
+isotonic recalibration (predicted ≈ observed across all deciles; e.g. the stand
+top decile predicts 0.510 vs. 0.487 observed, the tree top decile 0.180 vs.
+0.172). The tree model's very high ROC-AUC reflects that the large majority of
+trees carry near-zero cut risk and the model concentrates the ~1.8% of cuts into
+its top decile.
 
 ## Reproduce
 

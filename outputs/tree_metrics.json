@@ -1,0 +1,127 @@
+{
+  "model": "TREE   p(cut tree | tree status, stand status)",
+  "n_rows": 11186775,
+  "n_features": 59,
+  "base_rate": 0.017788415774703026,
+  "n_train": 7827054,
+  "n_val": 1680234,
+  "n_test": 1679487,
+  "roc_auc": 0.9735302965441881,
+  "avg_precision": 0.30971840577081183,
+  "brier_raw": 0.061537242571707756,
+  "brier_calibrated": 0.013513540185003566,
+  "brier_baseline": 0.017166733741760254,
+  "calibration_deciles": [
+    [
+      0.0,
+      1.7862565073301084e-05,
+      167949
+    ],
+    [
+      0.0,
+      0.0,
+      167949
+    ],
+    [
+      0.0,
+      5.954188509349478e-06,
+      167949
+    ],
+    [
+      0.0,
+      5.954188509349478e-06,
+      167949
+    ],
+    [
+      0.0,
+      5.954188509349478e-06,
+      167949
+    ],
+    [
+      0.0,
+      1.1908377018698957e-05,
+      167949
+    ],
+    [
+      0.0,
+      0.0,
+      167949
+    ],
+    [
+      0.0,
+      1.1908447959285695e-05,
+      167948
+    ],
+    [
+      0.00241187359702062,
+      0.002238788176327944,
+      167948
+    ],
+    [
+      0.17980646028282718,
+      0.1724224090576172,
+      167948
+    ]
+  ],
+  "features": [
+    "remper",
+    "dia",
+    "ht",
+    "ht_isna",
+    "cr",
+    "cr_isna",
+    "drybio_ag",
+    "drybio_ag_isna",
+    "tpa_unadj",
+    "totage",
+    "totage_isna",
+    "n_damage",
+    "STDAGE",
+    "STDAGE_isna",
+    "BALIVE",
+    "BALIVE_isna",
+    "SLOPE",
+    "ALSTKCD",
+    "ALSTKCD_isna",
+    "GSSTKCD",
+    "agb_per_acre",
+    "stand_tpa",
+    "qmd",
+    "max_dia",
+    "n_species",
+    "softwood_frac",
+    "LAT",
+    "LON",
+    "ELEV",
+    "SITECLCD",
+    "SITECLCD_isna",
+    "STDSZCD",
+    "CCLCD=1",
+    "CCLCD=2",
+    "CCLCD=3",
+    "CCLCD=4",
+    "CCLCD=5",
+    "TREECLCD=2",
+    "TREECLCD=3",
+    "TREECLCD=4",
+    "OWNGRPCD=10",
+    "OWNGRPCD=20",
+    "OWNGRPCD=30",
+    "OWNGRPCD=40",
+    "STDORGCD=0",
+    "STDORGCD=1",
+    "softwood=0",
+    "softwood=1",
+    "any_damage=0",
+    "any_damage=1",
+    "fortyp_grp=1",
+    "fortyp_grp=2",
+    "fortyp_grp=3",
+    "fortyp_grp=4",
+    "fortyp_grp=5",
+    "fortyp_grp=6",
+    "fortyp_grp=7",
+    "fortyp_grp=8",
+    "fortyp_grp=9"
+  ]
+}
