@@ -24,6 +24,7 @@ fi
 mkdir -p outputs
 echo ">> building datasets"
 $PY build_dataset.py 2>&1 | tee outputs/build.log
+$PY build_model3.py 2>&1 | tee -a outputs/build.log      # LANDIS-deployable cohort dataset
 echo ">> training + validating"
 $PY harvest_nn.py 2>&1 | tee outputs/train.log
 echo ">> done. See outputs/summary.json"

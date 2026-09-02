@@ -12,5 +12,12 @@
     "base_rate": 0.017788415774703026,
     "brier_calibrated": 0.013513540185003566,
     "brier_baseline": 0.017166733741760254
+  },
+  "cohort": {
+    "roc_auc": 0.7301779300422515,
+    "avg_precision": 0.30181024149326113,
+    "base_rate": 0.11120245605707169,
+    "brier_calibrated": 0.09004281199199055,
+    "brier_baseline": 0.09978316724300385
   }
 }

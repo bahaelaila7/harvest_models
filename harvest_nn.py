@@ -60,6 +60,15 @@ TREE_ONEHOT = {"CCLCD":[1,2,3,4,5], "TREECLCD":[2,3,4], "OWNGRPCD":[10,20,30,40]
                "STDORGCD":[0,1], "softwood":[0,1], "any_damage":[0,1],
                "fortyp_grp":[1,2,3,4,5,6,7,8,9]}
 
+# Model 3 (LANDIS-deployable): features derivable ONLY from stand biomass cohorts
+# (species / age / biomass) -- no FIA-only fields. Deployable on LANDIS outputs.
+COHORT_NUM = ["remper","agb_density","ln_agb","n_cohorts","n_species",
+              "mean_age","max_age","min_age","sd_age","dom_cohort_age",
+              "agb_f_0_10","agb_f_10_20","agb_f_20_40","agb_f_40_80","agb_f_80p",
+              "softwood_frac","dom_species_share","species_hhi"]
+COHORT_MISS = ["remper"]
+COHORT_ONEHOT = {}
+
 def load(name, num, miss, onehot, group_col):
     """Load parquet, build feature matrix X, label y, group ids, and feature names."""
     cols = list(dict.fromkeys(num + list(onehot) + ["label", group_col]))
@@ -214,6 +223,9 @@ if __name__ == "__main__":
     results["tree"] = run("tree","tree_dataset.parquet", TREE_NUM, TREE_MISS,
                           TREE_ONEHOT, "prev_plt_cn", hidden=96, epochs=8,
                           tag="TREE   p(cut tree | tree status, stand status)")
+    results["cohort"] = run("cohort","cohort_dataset.parquet", COHORT_NUM, COHORT_MISS,
+                          COHORT_ONEHOT, "prev_plt_cn", hidden=48, epochs=15,
+                          tag="COHORT p(cut stand | biomass cohorts)  [LANDIS-deployable]")
     with open(os.path.join(OUT,"summary.json"),"w") as f:
         json.dump({k:{m:v[m] for m in ["roc_auc","avg_precision","base_rate",
                    "brier_calibrated","brier_baseline"]} for k,v in results.items()}, f, indent=2)
