@@ -86,15 +86,30 @@ SELECT PLT_CN,
 FROM fia.COND GROUP BY PLT_CN
 """)
 
-# --- join: prior-visit cohorts -> cut during [T, T+1] ------------------------
+# --- ownership per plot-visit (dominant forested condition) ------------------
+# Supplied here from FIA; at LANDIS-deployment time ownership comes from an
+# external land-ownership layer joined onto the simulated cells.
+con.execute("""
+CREATE OR REPLACE TEMP TABLE own AS
+WITH rk AS (
+  SELECT PLT_CN, OWNGRPCD,
+         ROW_NUMBER() OVER (PARTITION BY PLT_CN
+                            ORDER BY CONDPROP_UNADJ DESC NULLS LAST, CONDID) rn
+  FROM fia.COND WHERE COND_STATUS_CD = 1
+)
+SELECT PLT_CN, OWNGRPCD FROM rk WHERE rn = 1
+""")
+
+# --- join: prior-visit cohorts (+ownership) -> cut during [T, T+1] -----------
 t = time.time()
 con.execute(f"""
 COPY (
-  SELECT sc.cut AS label, cur.REMPER AS remper,
+  SELECT sc.cut AS label, cur.REMPER AS remper, o.OWNGRPCD,
          cf.* EXCLUDE (plt_cn), cf.plt_cn AS prev_plt_cn
   FROM fia.PLOT cur
   JOIN cohort_feat cf ON cf.plt_cn = cur.PREV_PLT_CN     -- prior visit has cohorts
   JOIN stand_cut  sc ON sc.PLT_CN = cur.CN
+  LEFT JOIN own   o  ON o.PLT_CN = cur.PREV_PLT_CN
   WHERE cur.PREV_PLT_CN IS NOT NULL
     AND {CONUS.replace('STATECD','cur.STATECD')}
     AND cur.PLOT_STATUS_CD < 3

@@ -67,7 +67,8 @@ COHORT_NUM = ["remper","agb_density","ln_agb","n_cohorts","n_species",
               "agb_f_0_10","agb_f_10_20","agb_f_20_40","agb_f_40_80","agb_f_80p",
               "softwood_frac","dom_species_share","species_hhi"]
 COHORT_MISS = ["remper"]
-COHORT_ONEHOT = {}
+# ownership (supplied externally at LANDIS-deployment; from FIA here)
+COHORT_ONEHOT = {"OWNGRPCD":[10,20,30,40]}
 
 def load(name, num, miss, onehot, group_col):
     """Load parquet, build feature matrix X, label y, group ids, and feature names."""

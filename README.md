@@ -89,7 +89,13 @@ in this repo), joined to FIA cut labels on `plt_cn`:
 | `n_cohorts`, `n_species` | stand structural / diversity counts |
 | `softwood_frac` | softwood share of biomass |
 | `dom_species_share`, `species_hhi` | species dominance & concentration |
+| `OWNGRPCD` | ownership group (federal / state / private) — see note |
 | `remper` | interval length (LANDIS knows its own timestep) |
+
+Ownership is the single strongest harvest predictor. It is taken from FIA `COND`
+here; at LANDIS-deployment time it is supplied from an external land-ownership
+layer joined onto the simulated cells (everything else is derived from the cohorts
+themselves).
 
 ## Model & training
 
@@ -115,21 +121,21 @@ See `outputs/summary.json`, `outputs/{stand,tree}_metrics.json`, and
 |-------|-----:|---------:|---------:|--------:|------------------------:|-----------------------:|
 | **Stand** `p(cut stand \| status)` | 428,788 | 14.1% | 42 | **0.801** | **0.418** (base 0.140, 3.0×) | 0.099 vs 0.120 |
 | **Tree** `p(cut tree \| status)` | 11,186,775 | 1.78% | 59 | **0.974** | **0.310** (base 0.018, 17.7×) | 0.0135 vs 0.0172 |
-| **Cohort** `p(cut stand \| cohorts)` (LANDIS) | 327,214 | 11.1% | 19 | **0.730** | **0.302** (base 0.112, 2.7×) | 0.090 vs 0.100 |
+| **Cohort** `p(cut stand \| cohorts + own)` (LANDIS) | 327,214 | 11.1% | 23 | **0.759** | **0.331** (base 0.112, 2.9×) | 0.088 vs 0.100 |
 
 All three beat their base-rate baselines on every metric and are well-calibrated
 after isotonic recalibration (predicted ≈ observed across all deciles; e.g. the
 stand top decile predicts 0.510 vs. 0.487 observed, the tree top decile 0.180 vs.
-0.172, the cohort top decile 0.355 vs. 0.359). The tree model's very high ROC-AUC
+0.172, the cohort top decile 0.380 vs. 0.382). The tree model's very high ROC-AUC
 reflects that the large majority of trees carry near-zero cut risk and the model
 concentrates the ~1.8% of cuts into its top decile.
 
-The **cohort model is deliberately weaker** (0.730 vs. the stand model's 0.801):
-it cannot see ownership, stocking class, or site productivity — which are among the
-strongest harvest predictors — because LANDIS does not emit them. Biomass, age
-structure, and species composition alone still carry real signal (mature,
-high-biomass stands are cut more often), which is what makes it usable on
-simulation output.
+The **cohort model is weaker than the full stand model** (0.759 vs. 0.801): even
+with ownership added, it still cannot see stocking class or site productivity —
+strong harvest predictors that LANDIS does not emit. Biomass, age structure, and
+species composition (plus ownership) carry most of the signal, which is what makes
+it usable on simulation output. Adding ownership alone lifted it from 0.730 to
+0.759 AUC (AP 0.302 → 0.331), confirming ownership is the dominant driver.
 
 ## Reproduce
 
