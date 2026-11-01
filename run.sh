@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # Reproduce the harvest-readiness models end to end.
 #   1. create an isolated venv and install pinned deps
-#   2. build the two labeled datasets from /workspace/FIADB.duckdb
+#   2. build the two labeled datasets from the FIA truth DB
 #   3. train + validate both NNs, writing models/metrics/log to outputs/
 # Idempotent: re-running rebuilds datasets and retrains from scratch.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-FIADB="${FIADB:-/workspace/FIADB.duckdb}"
+FIADB="${FIADB:-$(cd ../FIA/truth && pwd)/fia_truth_r4.duckdb}"
 if [[ ! -f "$FIADB" ]]; then
-  echo "ERROR: FIA database not found at $FIADB (set FIADB=/path/to/FIADB.duckdb)" >&2
+  echo "ERROR: FIA database not found at $FIADB (set FIADB=/path/to/fia_truth_r4.duckdb)" >&2
   exit 1
 fi
 
