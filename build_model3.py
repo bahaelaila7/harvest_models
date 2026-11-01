@@ -21,16 +21,23 @@ Output: data/cohort_dataset.parquet
 """
 import duckdb, os, time
 
-FIADB = os.environ.get("FIADB", "/workspace/FIADB.duckdb")
-ECODB = os.environ.get("ECODB", "/workspace/data_eco_cohorts.duckdb")
+FIADB = os.environ.get("FIADB", os.path.join(os.environ.get("WORKSPACE", "/workspace"), "FIA/truth/fia_truth_r4.duckdb"))
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 os.makedirs(OUT, exist_ok=True)
 CONUS = "STATECD<=56 AND STATECD NOT IN (2,15)"
 
 con = duckdb.connect()
 con.execute("PRAGMA threads=8")
-con.execute(f"ATTACH '{FIADB}' AS fia (READ_ONLY)")
-con.execute(f"ATTACH '{ECODB}' AS eco (READ_ONLY)")
+con.execute(f"ATTACH '{FIADB}' AS t (READ_ONLY)")
+# the plot-visit cohorts: Sim A of the truth DB, keyed by the natural visit id of schema raw
+con.execute("""
+CREATE OR REPLACE TEMP VIEW eco_cohorts AS
+SELECT CAST(CAST(v.STATECD AS BIGINT) * 100000000000000 + CAST(v.UNITCD AS BIGINT) * 1000000000000 + CAST(v.COUNTYCD AS BIGINT) * 1000000000
+            + CAST(v.PLOT AS BIGINT) * 10000 + CAST(v.INVYR AS BIGINT) AS VARCHAR) AS plt_cn,
+       c.subp, c.species_symbol, c.agb, c.age_calc, c.sftwd_hrdwd
+FROM t.main.curated_cohorts_landis_stdorg c
+JOIN t.main.product_visits v ON v.STATECD = c.statecd AND v.UNITCD = c.unitcd AND v.COUNTYCD = c.countycd AND v.PLOT = c.plot AND v.MEASDATE = c.measdate
+""")
 
 t = time.time()
 # --- cohort feature block, one row per plot-visit (plt_cn) --------------------
@@ -38,7 +45,7 @@ con.execute("""
 CREATE OR REPLACE TEMP TABLE cohort_feat AS
 WITH sp AS (   -- per-species biomass within a plot-visit
   SELECT plt_cn, species_symbol, SUM(agb) sagb
-  FROM eco.data_eco_cohorts GROUP BY plt_cn, species_symbol
+  FROM eco_cohorts GROUP BY plt_cn, species_symbol
 ),
 sp2 AS (       -- species dominance + concentration (Herfindahl)
   SELECT plt_cn,
@@ -64,7 +71,7 @@ agg AS (
     SUM(CASE WHEN age_calc>=40 AND age_calc<80 THEN agb ELSE 0 END)/NULLIF(SUM(agb),0) AS agb_f_40_80,
     SUM(CASE WHEN age_calc>=80            THEN agb ELSE 0 END)/NULLIF(SUM(agb),0) AS agb_f_80p,
     SUM(CASE WHEN sftwd_hrdwd='S' THEN agb ELSE 0 END)/NULLIF(SUM(agb),0)          AS softwood_frac
-  FROM eco.data_eco_cohorts GROUP BY plt_cn
+  FROM eco_cohorts GROUP BY plt_cn
 )
 SELECT a.plt_cn,
        a.agb_sum / NULLIF(a.n_subp,0)          AS agb_density,   -- per-subplot (per-acre) biomass
@@ -83,7 +90,7 @@ con.execute("""
 CREATE OR REPLACE TEMP TABLE stand_cut AS
 SELECT PLT_CN,
    MAX(CASE WHEN TRTCD1=10 OR TRTCD2=10 OR TRTCD3=10 THEN 1 ELSE 0 END) AS cut
-FROM fia.COND GROUP BY PLT_CN
+FROM t.raw.COND GROUP BY PLT_CN
 """)
 
 # --- ownership per plot-visit (dominant forested condition) ------------------
@@ -95,7 +102,7 @@ WITH rk AS (
   SELECT PLT_CN, OWNGRPCD,
          ROW_NUMBER() OVER (PARTITION BY PLT_CN
                             ORDER BY CONDPROP_UNADJ DESC NULLS LAST, CONDID) rn
-  FROM fia.COND WHERE COND_STATUS_CD = 1
+  FROM t.raw.COND WHERE COND_STATUS_CD = 1
 )
 SELECT PLT_CN, OWNGRPCD FROM rk WHERE rn = 1
 """)
@@ -106,7 +113,7 @@ con.execute(f"""
 COPY (
   SELECT sc.cut AS label, cur.REMPER AS remper, o.OWNGRPCD,
          cf.* EXCLUDE (plt_cn), cf.plt_cn AS prev_plt_cn
-  FROM fia.PLOT cur
+  FROM t.raw.PLOT cur
   JOIN cohort_feat cf ON cf.plt_cn = cur.PREV_PLT_CN     -- prior visit has cohorts
   JOIN stand_cut  sc ON sc.PLT_CN = cur.CN
   LEFT JOIN own   o  ON o.PLT_CN = cur.PREV_PLT_CN

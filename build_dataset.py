@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """
 Build labeled datasets for the two harvest-readiness models from raw FIA data.
@@ -22,7 +23,7 @@ Outputs two parquet files under data/:  stand_dataset.parquet, tree_dataset.parq
 """
 import duckdb, os, time, sys
 
-DB = "/workspace/FIADB.duckdb"
+DB = os.environ.get("FIADB", os.path.join(os.environ.get("WORKSPACE", "/workspace"), "FIA/truth/fia_truth_r4.duckdb"))   # schema raw: natural visit id in the CN columns
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 os.makedirs(OUT, exist_ok=True)
 
@@ -30,6 +31,7 @@ os.makedirs(OUT, exist_ok=True)
 CONUS = "STATECD<=56 AND STATECD NOT IN (2,15)"
 
 con = duckdb.connect(DB, read_only=True)
+con.execute("SET schema = 'raw'")
 con.execute("PRAGMA threads=8")
 
 def step(msg):
